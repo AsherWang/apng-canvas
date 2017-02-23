@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>test</title>
+</head>
+<body>
+<img src="http://localhost:63343/apng-canvas/test/fireworks_onscreen.png" id="apng-img" alt="">
+<script src="./apng-canvas.js"></script>
+<script>
+    APNG.replaceWithCanvas(document.getElementById("apng-img")).then(function (anim) {
+//        anim.renderToFrame(23);   //显示指定帧
+        anim.play();
+        anim.on("end", function () {
+            console.log("end");
+        });
+    });
+</script>
+</body>
+</html>

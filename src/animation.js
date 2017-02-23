@@ -13,6 +13,7 @@ var Animation = function () {
     this.playTime = 0;
     this.frames = [];
 
+
     /**
      * Play animation (if not finished)
      * @return {void}
@@ -90,6 +91,15 @@ var Animation = function () {
         contexts.forEach(function (ctx) {ctx.clearRect(0, 0, ani.width, ani.height);});
         for(var index=0;index<end;index++){renderAFrame(ani.frames[index]);}
     };
+
+    var on_end_cbs=[];
+    this.on=function(status,cb){
+        if(status=='end'){
+            on_end_cbs.push(cb);
+        }
+    };
+
+
     // Private
 
     var ani = this,
@@ -130,6 +140,7 @@ var Animation = function () {
         if (!(ani.numPlays == 0 || fNum / ani.frames.length <= ani.numPlays)) {
             played = false;
             finished = true;
+            on_end_cbs.forEach(function(cb){cb()});
             return;
         }
         if (f == 0) {
