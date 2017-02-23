@@ -49,6 +49,50 @@ APNG.animateContext = function (url, context) {
     });
 };
 
+// private
+// use to set canvas' properties according to img and animation..
+var replace_with_canvas=function(img,anim){
+    var canvas=document.createElement("canvas");
+    canvas.width = anim.width;
+    canvas.height = anim.height;
+    Array.prototype.slice.call(img.attributes).forEach(function (attr) {
+        if (["alt", "src", "usemap", "ismap", "data-is-apng", "width", "height"].indexOf(attr.nodeName) == -1) {
+            canvas.setAttributeNode(attr.cloneNode(false));
+        }
+    });
+    canvas.setAttribute("data-apng-src", img.src);
+    if (img.alt != "") canvas.appendChild(document.createTextNode(img.alt));
+
+    var imgWidth = "", imgHeight = "", val = 0, unit = "";
+
+    if (img.style.width != "" && img.style.width != "auto") {
+        imgWidth = img.style.width;
+    } else if (img.hasAttribute("width")) {
+        imgWidth = img.getAttribute("width") + "px";
+    }
+    if (img.style.height != "" && img.style.height != "auto") {
+        imgHeight = img.style.height;
+    } else if (img.hasAttribute("height")) {
+        imgHeight = img.getAttribute("height") + "px";
+    }
+    if (imgWidth != "" && imgHeight == "") {
+        val = parseFloat(imgWidth);
+        unit = imgWidth.match(/\D+$/)[0];
+        imgHeight = Math.round(canvas.height * val / canvas.width) + unit;
+    }
+    if (imgHeight != "" && imgWidth == "") {
+        val = parseFloat(imgHeight);
+        unit = imgHeight.match(/\D+$/)[0];
+        imgWidth = Math.round(canvas.width * val / canvas.height) + unit;
+    }
+    canvas.style.width = imgWidth;
+    canvas.style.height = imgHeight;
+    var p = img.parentNode;
+    p.insertBefore(canvas, img);
+    p.removeChild(img);
+    anim.addContext(canvas.getContext("2d"));
+};
+
 /**
  * @param {HTMLImageElement} img
  * @return {Promise}
@@ -58,51 +102,55 @@ APNG.animateImage = function (img) {
     return APNG.parseURL(img.src).then(
         function (anim) {
             img.setAttribute("data-is-apng", "yes");
-            var canvas = document.createElement("canvas");
-            canvas.width = anim.width;
-            canvas.height = anim.height;
-            Array.prototype.slice.call(img.attributes).forEach(function (attr) {
-                if (["alt", "src", "usemap", "ismap", "data-is-apng", "width", "height"].indexOf(attr.nodeName) == -1) {
-                    canvas.setAttributeNode(attr.cloneNode(false));
-                }
-            });
-            canvas.setAttribute("data-apng-src", img.src);
-            if (img.alt != "") canvas.appendChild(document.createTextNode(img.alt));
-
-            var imgWidth = "", imgHeight = "", val = 0, unit = "";
-
-            if (img.style.width != "" && img.style.width != "auto") {
-                imgWidth = img.style.width;
-            } else if (img.hasAttribute("width")) {
-                imgWidth = img.getAttribute("width") + "px";
-            }
-            if (img.style.height != "" && img.style.height != "auto") {
-                imgHeight = img.style.height;
-            } else if (img.hasAttribute("height")) {
-                imgHeight = img.getAttribute("height") + "px";
-            }
-            if (imgWidth != "" && imgHeight == "") {
-                val = parseFloat(imgWidth);
-                unit = imgWidth.match(/\D+$/)[0];
-                imgHeight = Math.round(canvas.height * val / canvas.width) + unit;
-            }
-            if (imgHeight != "" && imgWidth == "") {
-                val = parseFloat(imgHeight);
-                unit = imgHeight.match(/\D+$/)[0];
-                imgWidth = Math.round(canvas.width * val / canvas.height) + unit;
-            }
-            canvas.style.width = imgWidth;
-            canvas.style.height = imgHeight;
-
-            var p = img.parentNode;
-            p.insertBefore(canvas, img);
-            p.removeChild(img);
-            anim.addContext(canvas.getContext("2d"));
+            replace_with_canvas(img,anim);
             anim.play();
         },
         function () {
             img.setAttribute("data-is-apng", "no");
         });
+};
+
+
+/**
+ * @param {HTMLImageElement} img
+ * @return {Promise}
+ */
+APNG.replaceWithCanvas = function (img) {
+    img.setAttribute("data-is-apng", "progress");
+    return new Promise(function(resolve,reject){
+        APNG.parseURL(img.src).then(
+            function (anim) {
+                img.setAttribute("data-is-apng", "yes");
+                replace_with_canvas(img,anim);
+                resolve(anim);
+            },
+            function () {
+                img.setAttribute("data-is-apng", "no");
+                reject();
+            });
+    });
+};
+
+/**
+ * @param {HTMLImageElement} anpg url
+ * @return {Promise}
+ */
+APNG.renderToTarget = function (url,target,opts) {
+    return new Promise(function(resolve,reject){
+        APNG.parseURL(url).then(
+            function (anim) {
+                opts.width = opts.width ? opts.width+"px" : "100px";
+                var img=document.createElement("img");
+                img.style.width=opts.width;
+                img.src=url;
+                target.appendChild(img);
+                replace_with_canvas(img,anim);
+                resolve(anim);
+            },
+            function () {
+                reject();
+            });
+    });
 };
 
 /**

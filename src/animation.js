@@ -83,6 +83,13 @@ var Animation = function () {
      */
     this.isFinished = function () { return finished; };
 
+
+    this.renderToFrame=function(index){
+        played = true;
+        var end=Math.min(index+1,ani.frames.length);
+        contexts.forEach(function (ctx) {ctx.clearRect(0, 0, ani.width, ani.height);});
+        for(var index=0;index<end;index++){renderAFrame(ani.frames[index]);}
+    };
     // Private
 
     var ani = this,
@@ -98,22 +105,7 @@ var Animation = function () {
         if (played) requestAnimationFrame(tick);
     };
 
-    var renderFrame = function (now) {
-        var f = fNum++ % ani.frames.length;
-        var frame = ani.frames[f];
-
-        if (!(ani.numPlays == 0 || fNum / ani.frames.length <= ani.numPlays)) {
-            played = false;
-            finished = true;
-            return;
-        }
-
-        if (f == 0) {
-            contexts.forEach(function (ctx) {ctx.clearRect(0, 0, ani.width, ani.height);});
-            prevF = null;
-            if (frame.disposeOp == 2) frame.disposeOp = 1;
-        }
-
+    var renderAFrame = function(frame){
         if (prevF && prevF.disposeOp == 1) {
             contexts.forEach(function (ctx) {ctx.clearRect(prevF.left, prevF.top, prevF.width, prevF.height);});
         } else if (prevF && prevF.disposeOp == 2) {
@@ -128,7 +120,24 @@ var Animation = function () {
             contexts.forEach(function (ctx) {ctx.clearRect(frame.left, frame.top, frame.width, frame.height);});
         }
         contexts.forEach(function (ctx) {ctx.drawImage(frame.img, frame.left, frame.top);});
+        return 'done';
+    };
 
+
+    var renderFrame = function (now) {
+        var f = fNum++ % ani.frames.length;
+        var frame = ani.frames[f];
+        if (!(ani.numPlays == 0 || fNum / ani.frames.length <= ani.numPlays)) {
+            played = false;
+            finished = true;
+            return;
+        }
+        if (f == 0) {
+            contexts.forEach(function (ctx) {ctx.clearRect(0, 0, ani.width, ani.height);});
+            prevF = null;
+            if (frame.disposeOp == 2) frame.disposeOp = 1;
+        }
+        renderAFrame(frame);
         if (nextRenderTime == 0) nextRenderTime = now;
         while (now > nextRenderTime + ani.playTime) nextRenderTime += ani.playTime;
         nextRenderTime += frame.delay;
