@@ -92,11 +92,9 @@ var Animation = function () {
         for(var index=0;index<end;index++){renderAFrame(ani.frames[index]);}
     };
 
-    var on_end_cbs=[];
+    var on_end_cbs=null;
     this.on=function(status,cb){
-        if(status=='end'){
-            on_end_cbs.push(cb);
-        }
+        on_end_cbs=cb;
     };
 
 
@@ -140,7 +138,7 @@ var Animation = function () {
         if (!(ani.numPlays == 0 || fNum / ani.frames.length <= ani.numPlays)) {
             played = false;
             finished = true;
-            on_end_cbs.forEach(function(cb){cb()});
+            if(on_end_cbs)on_end_cbs();
             return;
         }
         if (f == 0) {

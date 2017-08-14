@@ -7,11 +7,16 @@
 <img src="http://localhost:63343/apng-canvas/test/fireworks_onscreen.png" id="apng-img" alt="">
 <script src="./apng-canvas.js"></script>
 <script>
-    APNG.replaceWithCanvas(document.getElementById("apng-img")).then(function (anim) {
+    var tt=null;
+    APNG.replaceWithCanvas(document.getElementById("apng-img"),true).then(function (anim,tw) {
 //        anim.renderToFrame(23);    //显示指定帧
+        tt=anim;
         anim.play();                 //播放
+        console.log(1111);
+        console.log(tw);
         anim.on("end", function () { //添加结束时间回调
             console.log("end");
+            APNG.releaseCanvas(tw);
         });
     });
 </script>
